@@ -104,16 +104,7 @@ impl App {
                             ]
                             .spacing(10)
                         )
-                        .style(|_theme| {
-                            container::Style {
-                                border: Some(iced::Border {
-                                    color: Color::BLACK,
-                                    width: 1.0,
-                                    radius: 0.5,
-                                }),
-                                ..container::Style::default()
-                            }
-                        })
+                        .style(container::rounded_box)
                         .padding(10)
                         .into()
                     }).collect::<Vec<_>>()
