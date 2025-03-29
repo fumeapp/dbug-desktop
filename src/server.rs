@@ -1,7 +1,9 @@
 use warp::{hyper::Method, Filter};
 use crate::storage::Storage;
+use tokio::sync::watch;
 
-pub async fn listen() {
+
+pub async fn listen(tx: watch::Sender<()>) {
 
     let storage = Storage::new().expect("Failed to initialize storage");
 
@@ -9,12 +11,14 @@ pub async fn listen() {
         .and(warp::body::json())
         .map({
             let storage = storage.clone();
+            let tx = tx.clone();
             move |body: serde_json::Value| {
             println!("Received payload: {}", body); // Log the received payload
             // Store the payload
             if let Err(e) = storage.add_json(body.clone()) {
                 eprintln!("Failed to store payload: {}", e);
             }
+            let _ = tx.send(());
             format!("hello {}!", body) // Return the formatted string
             }
         });

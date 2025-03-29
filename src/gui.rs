@@ -6,12 +6,13 @@ use iced::widget::{
     opaque, row, stack, text, svg,
 };
 use iced::{Bottom, Color, Element, Fill, Subscription, Task};
-
+use tokio::sync::watch;
 use crate::settings::{Settings, Theme};
 use crate::storage::Storage;
 
-pub fn gui() -> iced::Result {
-    iced::application("Modal - Iced", App::update, App::view)
+pub fn gui(rx: watch::Receiver<()>) -> iced::Result {
+    let app = App::new(rx);
+    iced::application("Modal - Iced", move |state, message| app.update(message), move |state| app.view())
         .subscription(App::subscription)
         .run()
 }
@@ -20,6 +21,7 @@ struct App {
     show_modal: bool,
     settings: Settings,
     storage: Storage,
+    rx: watch::Receiver<()>,
 }
 
 impl Default for App {
@@ -28,6 +30,7 @@ impl Default for App {
             show_modal: false,
             settings: Settings::load(),
             storage: Storage::new().expect("Failed to initialize storage"),
+            rx: watch::channel(()).1, // Create a default receiver
         }
     }
 }
@@ -41,6 +44,15 @@ enum Message {
 }
 
 impl App {
+    fn new(rx: watch::Receiver<()>) -> Self {
+        Self {
+            show_modal: false,
+            settings: Settings::load(),
+            storage: Storage::new().expect("Failed to initialize storage"),
+            rx,
+        }
+    }
+
     fn subscription(&self) -> Subscription<Message> {
         event::listen().map(Message::Event)
     }
@@ -65,10 +77,10 @@ impl App {
             }
             Message::Event(event) => match event {
                 Event::Keyboard(keyboard::Event::KeyPressed {
-                                    key: keyboard::Key::Named(key::Named::Tab),
-                                    modifiers,
-                                    ..
-                                }) => {
+                    key: keyboard::Key::Named(key::Named::Tab),
+                    modifiers,
+                    ..
+                }) => {
                     if modifiers.shift() {
                         widget::focus_previous()
                     } else {
@@ -76,9 +88,9 @@ impl App {
                     }
                 }
                 Event::Keyboard(keyboard::Event::KeyPressed {
-                                    key: keyboard::Key::Named(key::Named::Escape),
-                                    ..
-                                }) => {
+                    key: keyboard::Key::Named(key::Named::Escape),
+                    ..
+                }) => {
                     self.hide_modal();
                     Task::none()
                 }
@@ -117,9 +129,9 @@ impl App {
                 .align_y(Bottom)
                 .height(Fill),
             ]
-                .height(Fill),
+            .height(Fill),
         )
-            .padding(10);
+        .padding(10);
 
         if self.show_modal {
             let theme_selection = container(
@@ -134,18 +146,16 @@ impl App {
                 ]
                 .spacing(20),
             )
-                .width(300)
-                .padding(10)
-                .style(container::rounded_box);
+            .width(300)
+            .padding(10)
+            .style(container::rounded_box);
 
             modal(content, theme_selection, Message::HideModal)
         } else {
             content.into()
         }
     }
-}
 
-impl App {
     fn hide_modal(&mut self) {
         self.show_modal = false;
     }
@@ -177,5 +187,5 @@ where
             .on_press(on_blur)
         )
     ]
-        .into()
+    .into()
 }
