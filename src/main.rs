@@ -1,3 +1,4 @@
+mod components;
 mod gui;
 mod server;
 mod settings;
