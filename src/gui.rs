@@ -134,7 +134,7 @@ impl App {
         });
 
         // Use the payloads component with expanded ID
-        let payloads = components::payload_list(&self.storage, self.expanded_payload_id.as_ref());
+        let payloads = components::payload_list(&self.storage, self.expanded_payload_id.as_ref(), &self.theme());
 
         let content = container(
             column![
